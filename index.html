@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EV vs Gas Break-Even Calculator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a18; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; }
+    .container { width: 100%; max-width: 560px; }
+    h1 { font-size: 16px; font-weight: 500; color: #444441; margin-bottom: 1.5rem; letter-spacing: 0.01em; }
+    .vgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .vcard { background: #fff; border-radius: 12px; padding: 1rem 1.25rem; border: 0.5px solid rgba(0,0,0,0.12); }
+    .vcard-label { font-size: 11px; letter-spacing: 0.06em; color: #888780; text-transform: uppercase; margin-bottom: 10px; }
+    .srow { margin-bottom: 0; }
+    .stop { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+    .slabel { font-size: 12px; color: #5f5e5a; }
+    .sval { font-size: 13px; font-weight: 500; color: #1a1a18; min-width: 72px; text-align: right; }
+    input[type=range] { width: 100%; accent-color: #444441; cursor: pointer; }
+    .vcard-gas { margin-bottom: 12px; }
+    .banner { background: #fff; border-radius: 12px; padding: 1.5rem; border: 0.5px solid rgba(0,0,0,0.12); margin-bottom: 12px; }
+    .be-label { font-size: 12px; color: #5f5e5a; margin-bottom: 6px; }
+    .be-val { font-size: 48px; font-weight: 500; line-height: 1; color: #1a1a18; }
+    .be-unit { font-size: 13px; color: #888780; margin-top: 6px; }
+    .comparisons { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 0.5px solid rgba(0,0,0,0.1); }
+    .cmp-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .cmp-left { font-size: 12px; color: #5f5e5a; white-space: nowrap; flex: 1; }
+    .cmp-right { display: flex; align-items: center; gap: 7px; justify-content: flex-start; min-width: 90px; }
+    .cmp-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .cmp-pct { font-size: 13px; font-weight: 500; text-align: right; }
+    .sources { background: #fff; border-radius: 12px; padding: 1rem 1.25rem; border: 0.5px solid rgba(0,0,0,0.12); }
+    .src-label { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: #888780; margin-bottom: 8px; }
+    .src-item { font-size: 11px; color: #5f5e5a; line-height: 1.6; }
+    .src-item a { color: #5f5e5a; text-decoration: underline; text-underline-offset: 2px; }
+    .reset-btn { font-size: 11px; color: #5f5e5a; background: none; border: 0.5px solid rgba(0,0,0,0.2); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+    .reset-btn:hover { background: #f0efed; }
+    .defaults-note { font-size: 11px; color: #888780; margin-top: 6px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:1.5rem;">
+      <h1 style="margin-bottom:0;">EV vs gas — break-even electricity price</h1>
+      <button class="reset-btn" id="reset-btn">Reset defaults</button>
+    </div>
+
+    <div class="vgrid">
+      <div class="vcard">
+        <div class="vcard-label">Gas / hybrid vehicle</div>
+        <div class="srow">
+          <div class="stop"><span class="slabel">Fuel economy</span><span class="sval" id="mpg-out">30 mpg</span></div>
+          <input type="range" min="10" max="55" step="1" value="30" id="mpg-sl">
+        </div>
+      </div>
+      <div class="vcard">
+        <div class="vcard-label">Electric vehicle</div>
+        <div class="srow">
+          <div class="stop"><span class="slabel">Efficiency</span><span class="sval" id="mpkwh-out">3.5 mi/kWh</span></div>
+          <input type="range" min="1.5" max="6.0" step="0.1" value="3.5" id="mpkwh-sl">
+        </div>
+      </div>
+    </div>
+
+    <div class="defaults-note">Defaults reflect EPA combined ratings: Honda CR-V AWD (30 mpg) and Honda Prologue (3.5 mi/kWh).</div>
+
+    <div class="vcard vcard-gas" style="margin-top:12px;">
+      <div class="srow">
+        <div class="stop"><span class="slabel">Gas price</span><span class="sval" id="gas-out">$3.50 /gal</span></div>
+        <input type="range" min="2.00" max="7.00" step="0.05" value="3.50" id="gas-sl">
+      </div>
+    </div>
+
+    <div class="banner">
+      <div class="be-label">Break-even electricity price</div>
+      <div class="be-val" id="be-val">$0.408</div>
+      <div class="be-unit">per kWh — EV costs the same per mile as the gas vehicle at this rate</div>
+
+      <div class="comparisons">
+        <div class="cmp-row">
+          <div class="cmp-left">NY avg residential / workplace <span>($0.27/kWh)</span></div>
+          <div class="cmp-right" style="justify-content:flex-start;">
+            <div class="cmp-dot" id="dot-res"></div>
+            <div class="cmp-pct" id="pct-res"></div>
+          </div>
+        </div>
+        <div class="cmp-row">
+          <div class="cmp-left">NY avg fast charging rate <span>($0.54/kWh)</span></div>
+          <div class="cmp-right" style="justify-content:flex-start;">
+            <div class="cmp-dot" id="dot-dcfc"></div>
+            <div class="cmp-pct" id="pct-dcfc"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sources">
+      <div class="src-label">Sources</div>
+      <div class="src-item">NY residential rate ($0.27/kWh): U.S. Energy Information Administration, November 2025 data. Via <a href="https://www.politifact.com/factchecks/2026/feb/13/tom-omara/new-york-electricity-rates-utilities/" target="_blank">PolitiFact, Feb 2026</a>.</div>
+      <div class="src-item" style="margin-top:5px;">NY avg fast charging rate ($0.54/kWh): Paren, <a href="https://www.paren.app/reports/state-of-the-industry-report-us-ev-fast-charging-full-year-2025" target="_blank">State of the US EV Fast-Charging Industry Report, Full-Year 2025</a>. NY metro area average is higher at $0.62/kWh.</div>
+    </div>
+  </div>
+
+  <script>
+    const mpgSl = document.getElementById('mpg-sl');
+    const mpkwhSl = document.getElementById('mpkwh-sl');
+    const gasSl = document.getElementById('gas-sl');
+
+    const NY_RES  = 0.27;
+    const NY_DCFC = 0.54;
+
+    function cmpLabel(breakeven, reference) {
+      const diff = reference - breakeven;
+      const absDiff = Math.abs(diff).toFixed(2);
+      if (diff > 0.005) {
+        return { text: '$' + absDiff, dot: '#D85A30' };
+      } else if (diff < -0.005) {
+        return { text: '($' + absDiff + ')', dot: '#1D9E75' };
+      } else {
+        return { text: '$0.00', dot: '#888780' };
+      }
+    }
+
+    function update() {
+      const mpg      = parseFloat(mpgSl.value);
+      const mpkwh    = parseFloat(mpkwhSl.value);
+      const gasPrice = parseFloat(gasSl.value);
+
+      document.getElementById('mpg-out').textContent   = mpg + ' mpg';
+      document.getElementById('mpkwh-out').textContent = mpkwh.toFixed(1) + ' mi/kWh';
+      document.getElementById('gas-out').textContent   = '$' + gasPrice.toFixed(2) + ' /gal';
+
+      const gasCpm   = gasPrice / mpg;
+      const breakeven = gasCpm * mpkwh;
+
+      document.getElementById('be-val').textContent = '$' + breakeven.toFixed(2);
+
+      const res  = cmpLabel(breakeven, NY_RES);
+      document.getElementById('pct-res').textContent      = res.text;
+      document.getElementById('dot-res').style.background = res.dot;
+
+      const dcfc = cmpLabel(breakeven, NY_DCFC);
+      document.getElementById('pct-dcfc').textContent      = dcfc.text;
+      document.getElementById('dot-dcfc').style.background = dcfc.dot;
+    }
+
+    const DEFAULTS = { mpg: 30, mpkwh: 3.5, gas: 3.50 };
+
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      mpgSl.value   = DEFAULTS.mpg;
+      mpkwhSl.value = DEFAULTS.mpkwh;
+      gasSl.value   = DEFAULTS.gas;
+      update();
+    });
+
+    update();
+    [mpgSl, mpkwhSl, gasSl].forEach(sl => sl.addEventListener('input', update));
+  </script>
+</body>
+</html>
