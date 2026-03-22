@@ -6,7 +6,19 @@
   <title>EV vs Gas Break-Even Calculator</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a18; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f3;
+      color: #1a1a18;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem;
+      padding-left: max(1rem, env(safe-area-inset-left));
+      padding-right: max(1rem, env(safe-area-inset-right));
+      padding-bottom: max(2rem, env(safe-area-inset-bottom));
+    }
     .container { width: 100%; max-width: 560px; }
     h1 { font-size: 16px; font-weight: 500; color: #444441; margin-bottom: 1.5rem; letter-spacing: 0.01em; }
     .vgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
@@ -16,25 +28,69 @@
     .stop { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
     .slabel { font-size: 12px; color: #5f5e5a; }
     .sval { font-size: 13px; font-weight: 500; color: #1a1a18; min-width: 72px; text-align: right; }
-    input[type=range] { width: 100%; accent-color: #444441; cursor: pointer; }
+    input[type=range] {
+      width: 100%;
+      accent-color: #444441;
+      cursor: pointer;
+      height: 28px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+    }
+    input[type=range]::-webkit-slider-runnable-track {
+      height: 4px;
+      background: #d3d1c7;
+      border-radius: 2px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #444441;
+      margin-top: -9px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+    }
+    input[type=range]::-moz-range-track { height: 4px; background: #d3d1c7; border-radius: 2px; }
+    input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: #444441; border: none; box-shadow: 0 1px 4px rgba(0,0,0,0.18); }
     .vcard-gas { margin-bottom: 12px; }
     .banner { background: #fff; border-radius: 12px; padding: 1.5rem; border: 0.5px solid rgba(0,0,0,0.12); margin-bottom: 12px; }
     .be-label { font-size: 12px; color: #5f5e5a; margin-bottom: 6px; }
-    .be-val { font-size: 48px; font-weight: 500; line-height: 1; color: #1a1a18; }
+    .be-val { font-size: 52px; font-weight: 500; line-height: 1; color: #1a1a18; }
     .be-unit { font-size: 13px; color: #888780; margin-top: 6px; }
-    .comparisons { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 0.5px solid rgba(0,0,0,0.1); }
+    .comparisons { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 0.5px solid rgba(0,0,0,0.1); }
     .cmp-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .cmp-left { font-size: 12px; color: #5f5e5a; white-space: nowrap; flex: 1; }
-    .cmp-right { display: flex; align-items: center; gap: 7px; justify-content: flex-start; min-width: 90px; }
-    .cmp-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-    .cmp-pct { font-size: 13px; font-weight: 500; text-align: right; }
+    .cmp-left { font-size: 13px; color: #5f5e5a; flex: 1; line-height: 1.4; }
+    .cmp-right { display: flex; align-items: center; gap: 7px; justify-content: flex-start; min-width: 80px; }
+    .cmp-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .cmp-pct { font-size: 14px; font-weight: 500; }
     .sources { background: #fff; border-radius: 12px; padding: 1rem 1.25rem; border: 0.5px solid rgba(0,0,0,0.12); }
     .src-label { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: #888780; margin-bottom: 8px; }
     .src-item { font-size: 11px; color: #5f5e5a; line-height: 1.6; }
     .src-item a { color: #5f5e5a; text-decoration: underline; text-underline-offset: 2px; }
-    .reset-btn { font-size: 11px; color: #5f5e5a; background: none; border: 0.5px solid rgba(0,0,0,0.2); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
-    .reset-btn:hover { background: #f0efed; }
+    .reset-btn {
+      font-size: 12px;
+      color: #5f5e5a;
+      background: none;
+      border: 0.5px solid rgba(0,0,0,0.2);
+      border-radius: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      white-space: nowrap;
+    }
+    .reset-btn:active { background: #e8e7e4; }
     .defaults-note { font-size: 11px; color: #888780; margin-top: 6px; line-height: 1.5; }
+
+    @media (max-width: 400px) {
+      body { padding: 1rem 0.75rem; padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+      .be-val { font-size: 44px; }
+      .vcard { padding: 0.85rem 1rem; }
+      .banner { padding: 1.25rem 1rem; }
+      .cmp-left { font-size: 12px; }
+      .cmp-pct { font-size: 13px; }
+    }
   </style>
 </head>
 <body>
@@ -154,6 +210,9 @@
 
     update();
     [mpgSl, mpkwhSl, gasSl].forEach(sl => sl.addEventListener('input', update));
+  </script>
+</body>
+</html>
   </script>
 </body>
 </html>
